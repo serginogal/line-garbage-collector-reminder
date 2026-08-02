@@ -11,6 +11,13 @@ import { getGlobalSendTime } from '@/services/settingsService';
 
 const app = new Hono();
 
+app.use('*', async (c, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  logger.info('Request', { method: c.req.method, path: c.req.path, status: c.res.status, ms });
+});
+
 app.get('/health', (c) => {
   return c.json({ status: 'ok' });
 });
