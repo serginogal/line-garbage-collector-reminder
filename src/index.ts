@@ -7,6 +7,7 @@ import { handleWebhook } from '@/line/webhook';
 import { startScheduler } from '@/scheduler/garbageReminder';
 import { logger } from '@/lib/logger';
 import { migrate } from '@/scripts/migrate';
+import { getGlobalSendTime } from '@/services/settingsService';
 
 const app = new Hono();
 
@@ -21,14 +22,15 @@ app.post('/webhook', async (c) => {
 });
 
 function main(): void {
-  logger.info('Starting application', {
-    port: env.PORT,
-    sendTime: env.SEND_TIME,
-    timezone: env.TIMEZONE,
-  });
-
   migrate();
   getDb();
+
+  const globalDefault = getGlobalSendTime();
+  logger.info('Starting application', {
+    port: env.PORT,
+    globalDefault,
+    timezone: env.TIMEZONE,
+  });
 
   startScheduler();
 

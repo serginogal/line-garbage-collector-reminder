@@ -1,22 +1,22 @@
 import { getDb } from '@/database/db';
 import { logger } from '@/lib/logger';
-import { findAllSubscribed } from './userService';
+import { findSubscribedForHour } from './userService';
 import { findTodayByArea } from './garbageService';
 
 const MULTICAST_BATCH_SIZE = 500;
 
-export function hasNotified(areaId: number, date: string): boolean {
+export function hasNotified(userId: number, date: string): boolean {
   const db = getDb();
   const row = db
-    .prepare('SELECT id FROM notification_logs WHERE area_id = ? AND date = ?')
-    .get(areaId, date);
+    .prepare('SELECT id FROM notification_logs WHERE user_id = ? AND date = ?')
+    .get(userId, date);
   return !!row;
 }
 
-export function markNotified(areaId: number, date: string): void {
+export function markNotified(userId: number, date: string): void {
   const db = getDb();
-  db.prepare('INSERT OR IGNORE INTO notification_logs (area_id, date) VALUES (?, ?)').run(
-    areaId,
+  db.prepare('INSERT OR IGNORE INTO notification_logs (user_id, date) VALUES (?, ?)').run(
+    userId,
     date,
   );
 }
@@ -55,25 +55,35 @@ export interface NotificationResult {
 
 export async function sendReminders(
   sendFn: (userIds: string[], message: string) => Promise<number>,
+  currentHour: string,
+  globalDefault: string,
 ): Promise<NotificationResult[]> {
   const today = getTodayString();
   const results: NotificationResult[] = [];
 
-  const areaIds = [...new Set(findAllSubscribed().map((u) => u.area_id))];
+  const users = findSubscribedForHour(currentHour, globalDefault);
 
-  for (const areaId of areaIds) {
-    if (hasNotified(areaId, today)) {
-      logger.info('Already notified for area today', { areaId, date: today });
-      continue;
-    }
+  const byArea = new Map<number, typeof users>();
+  for (const user of users) {
+    const list = byArea.get(user.area_id) ?? [];
+    list.push(user);
+    byArea.set(user.area_id, list);
+  }
 
+  for (const [areaId, areaUsers] of byArea) {
     const schedules = findTodayByArea(areaId, today);
     if (schedules.length === 0) continue;
 
     const categories = [...new Set(schedules.map((s) => s.category))];
     const message = buildReminderMessage(categories);
-    const users = findAllSubscribed().filter((u) => u.area_id === areaId);
-    const userIds = users.map((u) => u.line_user_id);
+
+    const notNotified = areaUsers.filter((u) => !hasNotified(u.id, today));
+    if (notNotified.length === 0) {
+      logger.info('All users in area already notified today', { areaId, date: today });
+      continue;
+    }
+
+    const userIds = notNotified.map((u) => u.line_user_id);
 
     let sent = 0;
     let errors = 0;
@@ -90,11 +100,11 @@ export async function sendReminders(
       }
     }
 
-    if (sent > 0) {
-      markNotified(areaId, today);
+    for (const user of notNotified) {
+      markNotified(user.id, today);
     }
 
-    const areaName = users[0]?.area_name ?? 'Unknown';
+    const areaName = areaUsers[0]?.area_name ?? 'Unknown';
     results.push({ areaId, areaName, sent, errors });
 
     logger.info('Notifications sent for area', {

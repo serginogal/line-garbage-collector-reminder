@@ -7,10 +7,7 @@ const envSchema = z.object({
   LINE_CHANNEL_SECRET: z.string().min(1, 'LINE_CHANNEL_SECRET is required'),
   LINE_CHANNEL_ACCESS_TOKEN: z.string().min(1, 'LINE_CHANNEL_ACCESS_TOKEN is required'),
   DATABASE_PATH: z.string().default('./data/garbage-bot.db'),
-  SEND_TIME: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, 'SEND_TIME must be HH:MM format')
-    .default('07:00'),
+  ADMIN_LINE_USER_ID: z.string().optional(),
   TIMEZONE: z.string().default('Asia/Tokyo'),
   PORT: z.coerce.number().int().positive().default(3000),
 });

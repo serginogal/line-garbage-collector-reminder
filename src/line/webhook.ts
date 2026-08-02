@@ -1,17 +1,18 @@
 import type { WebhookEvent, MessageEvent, FollowEvent } from '@line/bot-sdk';
 import { lineClient } from './client';
 import { findOrCreateUser } from '@/services/userService';
-import { getCommandHandler, isCommand } from './commands/index';
+import { getCommandHandler, getPrefixCommandHandler, isCommand } from './commands/index';
 import { logger } from '@/lib/logger';
-import { env } from '@/config/env';
+import { getGlobalSendTime } from '@/services/settingsService';
 
 function getWelcomeMessage(): string {
+  const sendTime = getGlobalSendTime();
   return `登録しました。
 
 地域:
 下連雀2丁目
 
-毎朝${env.SEND_TIME}に
+毎朝${sendTime}に
 ごみ収集のお知らせを送ります。`;
 }
 
@@ -37,9 +38,9 @@ async function handleMessage(event: MessageEvent): Promise<void> {
   const text = event.message.text.trim();
 
   if (isCommand(text)) {
-    const handler = getCommandHandler(text);
+    const handler = getCommandHandler(text) ?? getPrefixCommandHandler(text);
     if (handler) {
-      await handler(lineClient, userId);
+      await handler(lineClient, userId, text);
       logger.info('Command executed', { userId, command: text });
     } else {
       await lineClient.pushMessage({

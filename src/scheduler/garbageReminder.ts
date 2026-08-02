@@ -1,7 +1,7 @@
 import cron from 'node-cron';
-import { env } from '@/config/env';
 import { lineClient } from '@/line/client';
 import { sendReminders } from '@/services/notificationService';
+import { getGlobalSendTime } from '@/services/settingsService';
 import { logger } from '@/lib/logger';
 
 async function sendMulticast(userIds: string[], message: string): Promise<number> {
@@ -13,20 +13,24 @@ async function sendMulticast(userIds: string[], message: string): Promise<number
 }
 
 export function startScheduler(): cron.ScheduledTask {
-  const [hour, minute] = env.SEND_TIME.split(':');
-  const cronExpression = `${minute} ${hour} * * *`;
+  const cronExpression = '0 * * * *';
+  const timezone = 'Asia/Tokyo';
 
   logger.info('Starting scheduler', {
     cron: cronExpression,
-    timezone: env.TIMEZONE,
-    sendTime: env.SEND_TIME,
+    timezone,
   });
 
   const task = cron.schedule(
     cronExpression,
     () => {
-      logger.info('Scheduler execution started');
-      sendReminders(sendMulticast)
+      const now = new Date();
+      const currentHour = `${String(now.getHours()).padStart(2, '0')}:00`;
+      const globalDefault = getGlobalSendTime();
+
+      logger.info('Scheduler execution started', { currentHour, globalDefault });
+
+      sendReminders(sendMulticast, currentHour, globalDefault)
         .then((results) => {
           logger.info('Scheduler execution completed', { results });
         })
@@ -37,7 +41,7 @@ export function startScheduler(): cron.ScheduledTask {
         });
     },
     {
-      timezone: env.TIMEZONE,
+      timezone,
     },
   );
 

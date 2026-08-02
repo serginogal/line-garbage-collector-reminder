@@ -7,8 +7,12 @@ beforeEach(() => {
   migrate();
   const db = getDb();
   db.exec('DELETE FROM notification_logs');
+  db.exec('DELETE FROM users');
   db.exec('DELETE FROM areas');
   db.prepare('INSERT INTO areas (id, name) VALUES (?, ?)').run(1, '下連雀2丁目');
+  db.prepare(
+    'INSERT INTO users (id, line_user_id, area_id, display_name, subscribed) VALUES (?, ?, ?, ?, ?)',
+  ).run(1, 'user-001', 1, 'Test User', 1);
 });
 
 afterEach(() => {
@@ -38,7 +42,7 @@ describe('notificationService', () => {
       markNotified(1, '2026-04-01');
       const db = getDb();
       const count = db
-        .prepare('SELECT COUNT(*) as count FROM notification_logs WHERE area_id = 1')
+        .prepare('SELECT COUNT(*) as count FROM notification_logs WHERE user_id = 1')
         .get() as { count: number };
       expect(count.count).toBe(1);
     });
