@@ -8,6 +8,6 @@ export async function handleSubscribe(
   setSubscribed(userId, true);
   await client.pushMessage({
     to: userId,
-    messages: [{ type: 'text', text: '通知を再開しました。' }],
+    messages: [{ type: 'text', text: '✅ 通知を再開しました！' }],
   });
 }

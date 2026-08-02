@@ -7,13 +7,15 @@ import { getGlobalSendTime } from '@/services/settingsService';
 
 function getWelcomeMessage(): string {
   const sendTime = getGlobalSendTime();
-  return `登録しました。
+  return `👋 こんにちは！
 
-地域:
-下連雀2丁目
+下連雀2丁目エリアの
+ごみ収集リマインダーです 🗑️
 
-毎朝${sendTime}に
-ごみ収集のお知らせを送ります。`;
+毎日 ${sendTime} に
+翌日のごみをお知らせします
+
+/help でコマンド一覧を確認できます`;
 }
 
 async function handleFollow(event: FollowEvent): Promise<void> {
@@ -55,7 +57,10 @@ async function handleMessage(event: MessageEvent): Promise<void> {
       await lineClient.pushMessage({
         to: userId,
         messages: [
-          { type: 'text', text: '不明なコマンドです。/help で利用可能なコマンドを確認できます。' },
+          {
+            type: 'text',
+            text: '❓ そのコマンドは存在しません\n\n/help でコマンド一覧を確認できます',
+          },
         ],
       });
     }

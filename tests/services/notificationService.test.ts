@@ -51,7 +51,7 @@ describe('notificationService', () => {
   describe('buildReminderMessage', () => {
     it('builds message for single category', () => {
       const message = buildReminderMessage(['燃やせるごみ']);
-      expect(message).toBe('🗑️ 明日のごみ収集\n\n燃やせるごみ\n\n朝8時までに出してください。');
+      expect(message).toBe('🗑️ 明日のごみ収集\n\n燃やせるごみ\n\n⏰ 朝8時までに出してください');
     });
 
     it('builds message for multiple categories', () => {

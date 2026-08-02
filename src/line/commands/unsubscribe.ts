@@ -8,6 +8,6 @@ export async function handleUnsubscribe(
   setSubscribed(userId, false);
   await client.pushMessage({
     to: userId,
-    messages: [{ type: 'text', text: '通知を停止しました。' }],
+    messages: [{ type: 'text', text: '⏸️ 通知を停止しました' }],
   });
 }

@@ -10,21 +10,21 @@ export async function handleStatus(
   if (!user) {
     await client.pushMessage({
       to: userId,
-      messages: [{ type: 'text', text: 'ユーザーが見つかりません。' }],
+      messages: [{ type: 'text', text: '❌ ユーザーが見つかりません' }],
     });
     return;
   }
 
   const area = getArea(user.area_id);
   const areaName = area?.name ?? '不明';
-  const subscriptionStatus = user.subscribed ? '有効' : '無効';
+  const subscriptionStatus = user.subscribed ? 'オン' : 'オフ';
   const sendTime = user.send_time ?? getGlobalSendTime();
 
-  const message = `現在の設定:
+  const message = `⚙️ 現在の設定
 
-地域: ${areaName}
-通知: ${subscriptionStatus}
-通知時間: ${sendTime}`;
+📍 エリア: ${areaName}
+🔔 通知: ${subscriptionStatus}
+⏰ 通知時間: ${sendTime}`;
 
   await client.pushMessage({ to: userId, messages: [{ type: 'text', text: message }] });
 }

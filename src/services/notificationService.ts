@@ -23,11 +23,11 @@ export function markNotified(userId: number, date: string): void {
 
 export function buildReminderMessage(categories: string[]): string {
   if (categories.length === 1) {
-    return `🗑️ 明日のごみ収集\n\n${categories[0]}\n\n朝8時までに出してください。`;
+    return `🗑️ 明日のごみ収集\n\n${categories[0]}\n\n⏰ 朝8時までに出してください`;
   }
 
   const list = categories.map((c) => `- ${c}`).join('\n');
-  return `🗑️ 明日のごみ収集\n\n${list}\n\n朝8時までに出してください。`;
+  return `🗑️ 明日のごみ収集\n\n${list}\n\n⏰ 朝8時までに出してください`;
 }
 
 export function getTomorrowString(): string {
