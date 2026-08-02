@@ -1,6 +1,6 @@
-import type { WebhookEvent, MessageEvent, FollowEvent } from '@line/bot-sdk';
+import type { WebhookEvent, MessageEvent, FollowEvent, UnfollowEvent } from '@line/bot-sdk';
 import { lineClient } from './client';
-import { findOrCreateUser } from '@/services/userService';
+import { findOrCreateUser, setSubscribed } from '@/services/userService';
 import { getCommandHandler, getPrefixCommandHandler, isCommand } from './commands/index';
 import { logger } from '@/lib/logger';
 import { getGlobalSendTime } from '@/services/settingsService';
@@ -21,12 +21,21 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   if (!userId) return;
 
   findOrCreateUser(userId);
+  setSubscribed(userId, true);
 
   await lineClient.pushMessage({
     to: userId,
     messages: [{ type: 'text', text: getWelcomeMessage() }],
   });
   logger.info('New user followed', { userId });
+}
+
+async function handleUnfollow(event: UnfollowEvent): Promise<void> {
+  const userId = event.source.userId;
+  if (!userId) return;
+
+  setSubscribed(userId, false);
+  logger.info('User unfollowed', { userId });
 }
 
 async function handleMessage(event: MessageEvent): Promise<void> {
@@ -62,6 +71,9 @@ export async function handleWebhook(events: WebhookEvent[]): Promise<void> {
           break;
         case 'message':
           await handleMessage(event);
+          break;
+        case 'unfollow':
+          await handleUnfollow(event);
           break;
         default:
           logger.debug('Unhandled event type', { type: event.type });
