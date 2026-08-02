@@ -1,7 +1,7 @@
 import { getDb } from '@/database/db';
 import { logger } from '@/lib/logger';
 import { findSubscribedForHour } from './userService';
-import { findTodayByArea } from './garbageService';
+import { findGarbageByArea } from './garbageService';
 
 const MULTICAST_BATCH_SIZE = 500;
 
@@ -23,15 +23,16 @@ export function markNotified(userId: number, date: string): void {
 
 export function buildReminderMessage(categories: string[]): string {
   if (categories.length === 1) {
-    return `🗑️ 今日のごみ収集\n\n${categories[0]}\n\n朝8時までに出してください。`;
+    return `🗑️ 明日のごみ収集\n\n${categories[0]}\n\n朝8時までに出してください。`;
   }
 
   const list = categories.map((c) => `- ${c}`).join('\n');
-  return `🗑️ 今日のごみ収集\n\n${list}\n\n朝8時までに出してください。`;
+  return `🗑️ 明日のごみ収集\n\n${list}\n\n朝8時までに出してください。`;
 }
 
-export function getTodayString(): string {
+export function getTomorrowString(): string {
   const now = new Date();
+  now.setDate(now.getDate() + 1);
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -58,7 +59,7 @@ export async function sendReminders(
   currentHour: string,
   globalDefault: string,
 ): Promise<NotificationResult[]> {
-  const today = getTodayString();
+  const tomorrow = getTomorrowString();
   const results: NotificationResult[] = [];
 
   const users = findSubscribedForHour(currentHour, globalDefault);
@@ -71,15 +72,15 @@ export async function sendReminders(
   }
 
   for (const [areaId, areaUsers] of byArea) {
-    const schedules = findTodayByArea(areaId, today);
+    const schedules = findGarbageByArea(areaId, tomorrow);
     if (schedules.length === 0) continue;
 
     const categories = [...new Set(schedules.map((s) => s.category))];
     const message = buildReminderMessage(categories);
 
-    const notNotified = areaUsers.filter((u) => !hasNotified(u.id, today));
+    const notNotified = areaUsers.filter((u) => !hasNotified(u.id, tomorrow));
     if (notNotified.length === 0) {
-      logger.info('All users in area already notified today', { areaId, date: today });
+      logger.info('All users in area already notified tomorrow', { areaId, date: tomorrow });
       continue;
     }
 
@@ -101,7 +102,7 @@ export async function sendReminders(
     }
 
     for (const user of notNotified) {
-      markNotified(user.id, today);
+      markNotified(user.id, tomorrow);
     }
 
     const areaName = areaUsers[0]?.area_name ?? 'Unknown';
@@ -110,7 +111,7 @@ export async function sendReminders(
     logger.info('Notifications sent for area', {
       areaId,
       areaName,
-      date: today,
+      date: tomorrow,
       sent,
       errors,
     });

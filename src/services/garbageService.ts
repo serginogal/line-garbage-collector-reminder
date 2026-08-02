@@ -7,7 +7,7 @@ interface GarbageSchedule {
   category: string;
 }
 
-export function findTodayByArea(areaId: number, date: string): GarbageSchedule[] {
+export function findGarbageByArea(areaId: number, date: string): GarbageSchedule[] {
   const db = getDb();
   return db
     .prepare('SELECT * FROM garbage_schedule WHERE area_id = ? AND date = ?')
