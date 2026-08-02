@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS areas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO areas (id, name) VALUES (1, '下連雀2丁目');
