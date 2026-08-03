@@ -59,6 +59,18 @@ export function getArea(areaId: number): Area | undefined {
   return db.prepare('SELECT * FROM areas WHERE id = ?').get(areaId) as Area | undefined;
 }
 
+export function getAllAreas(): Area[] {
+  const db = getDb();
+  return db.prepare('SELECT * FROM areas ORDER BY id').all() as Area[];
+}
+
+export function setArea(lineUserId: string, areaId: number): void {
+  const db = getDb();
+  db.prepare(
+    "UPDATE users SET area_id = ?, updated_at = datetime('now') WHERE line_user_id = ?",
+  ).run(areaId, lineUserId);
+}
+
 export function findSubscribedForHour(
   currentHour: string,
   globalDefault: string,
