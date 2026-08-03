@@ -1,22 +1,15 @@
-import type { WebhookEvent, MessageEvent, FollowEvent, UnfollowEvent } from '@line/bot-sdk';
+import type {
+  WebhookEvent,
+  MessageEvent,
+  FollowEvent,
+  UnfollowEvent,
+  PostbackEvent,
+} from '@line/bot-sdk';
 import { lineClient } from './client';
-import { findOrCreateUser, findByLineId, getArea, setSubscribed } from '@/services/userService';
+import { findOrCreateUser, getArea, setArea, setSubscribed } from '@/services/userService';
 import { getCommandHandler, getPrefixCommandHandler, isCommand } from './commands/index';
 import { logger } from '@/lib/logger';
-import { getGlobalSendTime } from '@/services/settingsService';
-
-function getWelcomeMessage(areaName: string): string {
-  const sendTime = getGlobalSendTime();
-  return `👋 こんにちは！
-
-${areaName}エリアの
-ごみ収集リマインダーです 🗑️
-
-毎日 ${sendTime} に
-翌日のごみをお知らせします
-
-/help でコマンド一覧を確認できます`;
-}
+import { createWelcomeFlex } from './flexMessages';
 
 async function handleFollow(event: FollowEvent): Promise<void> {
   const userId = event.source.userId;
@@ -25,15 +18,11 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   findOrCreateUser(userId);
   setSubscribed(userId, true);
 
-  const user = findByLineId(userId);
-  const area = user ? getArea(user.area_id) : undefined;
-  const areaName = area?.name ?? '不明なエリア';
-
   await lineClient.pushMessage({
     to: userId,
-    messages: [{ type: 'text', text: getWelcomeMessage(areaName) }],
+    messages: [createWelcomeFlex()],
   });
-  logger.info('New user followed', { userId, areaName });
+  logger.info('New user followed', { userId });
 }
 
 async function handleUnfollow(event: UnfollowEvent): Promise<void> {
@@ -42,6 +31,30 @@ async function handleUnfollow(event: UnfollowEvent): Promise<void> {
 
   setSubscribed(userId, false);
   logger.info('User unfollowed', { userId });
+}
+
+async function handlePostback(event: PostbackEvent): Promise<void> {
+  const userId = event.source.userId;
+  if (!userId) return;
+
+  const params = new URLSearchParams(event.postback.data);
+  const action = params.get('action');
+
+  if (action === 'set_area') {
+    const areaId = parseInt(params.get('area_id') ?? '', 10);
+    if (isNaN(areaId)) return;
+
+    const area = getArea(areaId);
+    if (!area) return;
+
+    setArea(userId, areaId);
+
+    await lineClient.pushMessage({
+      to: userId,
+      messages: [{ type: 'text', text: `✅ エリアを「${area.name}」に変更しました！` }],
+    });
+    logger.info('Area changed via postback', { userId, areaId, areaName: area.name });
+  }
 }
 
 async function handleMessage(event: MessageEvent): Promise<void> {
@@ -83,6 +96,9 @@ export async function handleWebhook(events: WebhookEvent[]): Promise<void> {
           break;
         case 'unfollow':
           await handleUnfollow(event);
+          break;
+        case 'postback':
+          await handlePostback(event);
           break;
         default:
           logger.debug('Unhandled event type', { type: event.type });

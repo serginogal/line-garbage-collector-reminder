@@ -1,5 +1,6 @@
 import type { messagingApi } from '@line/bot-sdk';
-import { findByLineId, getArea, getAllAreas, setArea } from '@/services/userService';
+import { findByLineId, getArea, setArea } from '@/services/userService';
+import { createAreaSelectionFlex } from '../flexMessages';
 
 export async function handleSetArea(
   client: messagingApi.MessagingApiClient,
@@ -10,30 +11,21 @@ export async function handleSetArea(
   const areaId = parseInt(arg, 10);
 
   if (!arg || isNaN(areaId) || areaId <= 0) {
-    const areas = getAllAreas();
-    const areaList = areas.map((a) => `  ${a.id} - ${a.name}`).join('\n');
     await client.pushMessage({
       to: userId,
-      messages: [
-        {
-          type: 'text',
-          text: `❌ エリアIDを指定してください\n\n例: /set-area 2\n\n利用可能なエリア:\n${areaList}`,
-        },
-      ],
+      messages: [createAreaSelectionFlex()],
     });
     return;
   }
 
   const area = getArea(areaId);
   if (!area) {
-    const areas = getAllAreas();
-    const areaList = areas.map((a) => `  ${a.id} - ${a.name}`).join('\n');
     await client.pushMessage({
       to: userId,
       messages: [
         {
           type: 'text',
-          text: `❌ エリアID ${areaId} が見つかりません\n\n利用可能なエリア:\n${areaList}`,
+          text: `❌ エリアID ${areaId} が見つかりません\n\n/set-area で一覧を表示できます`,
         },
       ],
     });
@@ -53,8 +45,6 @@ export async function handleSetArea(
 
   await client.pushMessage({
     to: userId,
-    messages: [
-      { type: 'text', text: `✅ エリアを「${area.name}」(ID: ${areaId}) に変更しました！` },
-    ],
+    messages: [{ type: 'text', text: `✅ エリアを「${area.name}」に変更しました！` }],
   });
 }
