@@ -1,15 +1,15 @@
 import type { WebhookEvent, MessageEvent, FollowEvent, UnfollowEvent } from '@line/bot-sdk';
 import { lineClient } from './client';
-import { findOrCreateUser, setSubscribed } from '@/services/userService';
+import { findOrCreateUser, findByLineId, getArea, setSubscribed } from '@/services/userService';
 import { getCommandHandler, getPrefixCommandHandler, isCommand } from './commands/index';
 import { logger } from '@/lib/logger';
 import { getGlobalSendTime } from '@/services/settingsService';
 
-function getWelcomeMessage(): string {
+function getWelcomeMessage(areaName: string): string {
   const sendTime = getGlobalSendTime();
   return `👋 こんにちは！
 
-下連雀2丁目エリアの
+${areaName}エリアの
 ごみ収集リマインダーです 🗑️
 
 毎日 ${sendTime} に
@@ -25,11 +25,15 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   findOrCreateUser(userId);
   setSubscribed(userId, true);
 
+  const user = findByLineId(userId);
+  const area = user ? getArea(user.area_id) : undefined;
+  const areaName = area?.name ?? '不明なエリア';
+
   await lineClient.pushMessage({
     to: userId,
-    messages: [{ type: 'text', text: getWelcomeMessage() }],
+    messages: [{ type: 'text', text: getWelcomeMessage(areaName) }],
   });
-  logger.info('New user followed', { userId });
+  logger.info('New user followed', { userId, areaName });
 }
 
 async function handleUnfollow(event: UnfollowEvent): Promise<void> {

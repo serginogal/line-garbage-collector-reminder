@@ -24,21 +24,21 @@ afterEach(() => {
 describe('parseCsv', () => {
   it('parses valid CSV rows', () => {
     writeCsv(`date,area,category
-2026-04-01,下連雀2丁目,燃やせないごみ
-2026-04-02,下連雀2丁目,燃やせるごみ`);
+2026-04-01,下連雀1・2・3・4・5丁目,燃やせないごみ
+2026-04-02,下連雀1・2・3・4・5丁目,燃やせるごみ`);
 
     const rows = parseCsv(TEST_CSV);
     expect(rows).toHaveLength(2);
     expect(rows[0]).toEqual({
       date: '2026-04-01',
-      area: '下連雀2丁目',
+      area: '下連雀1・2・3・4・5丁目',
       category: '燃やせないごみ',
     });
   });
 
   it('rejects rows with invalid date format', () => {
     writeCsv(`date,area,category
-04/01/2026,下連雀2丁目,燃やせないごみ`);
+04/01/2026,下連雀1・2・3・4・5丁目,燃やせないごみ`);
 
     const rows = parseCsv(TEST_CSV);
     expect(rows).toHaveLength(0);
@@ -55,8 +55,8 @@ describe('parseCsv', () => {
 describe('importCsv', () => {
   it('imports valid CSV into database', () => {
     writeCsv(`date,area,category
-2026-04-01,下連雀2丁目,燃やせないごみ
-2026-04-02,下連雀2丁目,燃やせるごみ`);
+2026-04-01,下連雀1・2・3・4・5丁目,燃やせないごみ
+2026-04-02,下連雀1・2・3・4・5丁目,燃やせるごみ`);
 
     const result = importCsv(TEST_CSV);
     expect(result.imported).toBe(2);
@@ -73,7 +73,7 @@ describe('importCsv', () => {
 
   it('skips duplicate rows (idempotent)', () => {
     writeCsv(`date,area,category
-2026-04-01,下連雀2丁目,燃やせないごみ`);
+2026-04-01,下連雀1・2・3・4・5丁目,燃やせないごみ`);
 
     importCsv(TEST_CSV);
     const result = importCsv(TEST_CSV);
@@ -88,7 +88,7 @@ describe('importCsv', () => {
 
   it('creates areas automatically', () => {
     writeCsv(`date,area,category
-2026-04-01,下連雀2丁目,燃やせないごみ
+2026-04-01,下連雀1・2・3・4・5丁目,燃やせないごみ
 2026-04-01,上連雀1丁目,燃やせるごみ`);
 
     importCsv(TEST_CSV);
@@ -96,7 +96,7 @@ describe('importCsv', () => {
     const db = getDb();
     const areas = db.prepare('SELECT name FROM areas ORDER BY name').all() as { name: string }[];
     expect(areas).toHaveLength(2);
-    expect(areas.map((a) => a.name)).toEqual(['上連雀1丁目', '下連雀2丁目']);
+    expect(areas.map((a) => a.name)).toEqual(['上連雀1丁目', '下連雀1・2・3・4・5丁目']);
   });
 
   it('handles empty CSV without errors', () => {
