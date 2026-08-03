@@ -3,6 +3,7 @@ import { lineClient } from '@/line/client';
 import { sendReminders } from '@/services/notificationService';
 import { getGlobalSendTime } from '@/services/settingsService';
 import { logger } from '@/lib/logger';
+import { env } from '@/config/env';
 
 async function sendMulticast(userIds: string[], message: string): Promise<number> {
   await lineClient.multicast({
@@ -25,7 +26,11 @@ export function startScheduler(): cron.ScheduledTask {
     cronExpression,
     () => {
       const now = new Date();
-      const currentHour = `${String(now.getHours()).padStart(2, '0')}:00`;
+      const currentHour = `${new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        hour12: false,
+        timeZone: env.TIMEZONE,
+      }).format(now)}:00`;
       const globalDefault = getGlobalSendTime();
 
       logger.info('Scheduler execution started', { currentHour, globalDefault });
