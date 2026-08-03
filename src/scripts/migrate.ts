@@ -19,7 +19,7 @@ function getAppliedMigrations(db: ReturnType<typeof getDb>): Set<string> {
 }
 
 function getMigrationFiles(): string[] {
-  const migrationsDir = join(import.meta.dirname, '..', 'database', 'migrations');
+  const migrationsDir = join(process.cwd(), 'src', 'database', 'migrations');
   return readdirSync(migrationsDir)
     .filter((f) => f.endsWith('.sql'))
     .sort();
@@ -39,10 +39,7 @@ export function migrate(): void {
 
   const runMigration = db.transaction(() => {
     for (const file of pending) {
-      const sql = readFileSync(
-        join(import.meta.dirname, '..', 'database', 'migrations', file),
-        'utf-8',
-      );
+      const sql = readFileSync(join(process.cwd(), 'src', 'database', 'migrations', file), 'utf-8');
       db.exec(sql);
       db.prepare('INSERT INTO _migrations (name) VALUES (?)').run(file);
       logger.info('Applied migration', { name: file });
