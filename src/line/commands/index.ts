@@ -5,6 +5,7 @@ import { handleSubscribe } from './subscribe';
 import { handleUnsubscribe } from './unsubscribe';
 import { handleSetTime, handleSetGlobalTime } from './setTime';
 import { handleSetArea } from './setArea';
+import { handleSchedule } from './schedule';
 
 type CommandHandler = (
   client: messagingApi.MessagingApiClient,
@@ -17,6 +18,7 @@ const exactCommands: Record<string, CommandHandler> = {
   '/status': handleStatus,
   '/subscribe': handleSubscribe,
   '/unsubscribe': handleUnsubscribe,
+  '/schedule': handleSchedule,
 };
 
 const prefixCommands: { prefix: string; handler: CommandHandler }[] = [

@@ -14,6 +14,13 @@ export function findGarbageByArea(areaId: number, date: string): GarbageSchedule
     .all(areaId, date) as GarbageSchedule[];
 }
 
+export function findGarbageByAreaForWeek(areaId: number, startDate: string, endDate: string): GarbageSchedule[] {
+  const db = getDb();
+  return db
+    .prepare('SELECT * FROM garbage_schedule WHERE area_id = ? AND date >= ? AND date <= ? ORDER BY date')
+    .all(areaId, startDate, endDate) as GarbageSchedule[];
+}
+
 export function findAreaIdsWithCollection(date: string): number[] {
   const db = getDb();
   const rows = db

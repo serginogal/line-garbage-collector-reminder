@@ -189,6 +189,13 @@ export function createHelpFlex(): messagingApi.FlexMessage {
               },
               {
                 type: 'text',
+                text: '/schedule - 今週のスケジュールを確認',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+              {
+                type: 'text',
                 text: '/set-time HH:00 - 通知時間を変更',
                 size: 'sm',
                 wrap: true,
@@ -480,6 +487,112 @@ export function createTimeSelectionFlex(): messagingApi.FlexMessage {
       styles: {
         header: { separator: false },
         footer: { separator: true },
+      },
+    },
+  };
+}
+
+interface ScheduleEntry {
+  date: string;
+  category: string;
+}
+
+const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
+
+function formatDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  const dayName = DAY_NAMES[date.getDay()];
+  return `${dayName} ${parseInt(month)}/${parseInt(day)}`;
+}
+
+export function createScheduleFlex(
+  schedules: ScheduleEntry[],
+  startDate: string,
+  endDate: string,
+): messagingApi.FlexMessage {
+  const byDate = new Map<string, string[]>();
+  for (const s of schedules) {
+    const list = byDate.get(s.date) ?? [];
+    list.push(s.category);
+    byDate.set(s.date, list);
+  }
+
+  const dayContents: messagingApi.FlexBox[] = [];
+  const start = new Date(startDate.replace(/-/g, '/'));
+  const end = new Date(endDate.replace(/-/g, '/'));
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${dd}`;
+    const categories = byDate.get(dateStr);
+    const label = formatDate(dateStr);
+
+    if (categories && categories.length > 0) {
+      dayContents.push({
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: label, size: 'sm', weight: 'bold' },
+          ...categories.map((c) => ({
+            type: 'text' as const,
+            text: `  ${c}`,
+            size: 'xs',
+            color: '#555555',
+            wrap: true,
+          })),
+        ],
+        margin: 'md',
+      });
+    } else {
+      dayContents.push({
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: label, size: 'sm', weight: 'bold' },
+          { type: 'text', text: '  （なし）', size: 'xs', color: '#BBBBBB' },
+        ],
+        margin: 'md',
+      });
+    }
+  }
+
+  return {
+    type: 'flex',
+    altText: '今週のごみ収集',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      hero: {
+        type: 'image',
+        url: IMAGES.reminder,
+        ...HERO_IMAGE_STYLE,
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: '📅 今週のごみ収集',
+            weight: 'bold',
+            size: 'lg',
+            align: 'center',
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: dayContents,
+            margin: 'lg',
+          },
+        ],
+        paddingAll: '20px',
+      },
+      styles: {
+        header: { separator: false },
+        footer: { separator: false },
       },
     },
   };
