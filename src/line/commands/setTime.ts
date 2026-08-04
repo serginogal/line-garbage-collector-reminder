@@ -2,6 +2,7 @@ import type { messagingApi } from '@line/bot-sdk';
 import { findByLineId, setSendTime } from '@/services/userService';
 import { setSetting, getGlobalSendTime } from '@/services/settingsService';
 import { env } from '@/config/env';
+import { createTimeFlex, createTimeSelectionFlex } from '../flexMessages';
 
 const TIME_PATTERN = /^\d{2}:00$/;
 
@@ -11,6 +12,14 @@ export async function handleSetTime(
   text: string,
 ): Promise<void> {
   const arg = text.replace(/^\/set-time\s*/, '').trim();
+
+  if (!arg) {
+    await client.pushMessage({
+      to: userId,
+      messages: [createTimeSelectionFlex()],
+    });
+    return;
+  }
 
   if (arg === 'default') {
     const user = findByLineId(userId);
@@ -26,7 +35,7 @@ export async function handleSetTime(
     const globalDefault = getGlobalSendTime();
     await client.pushMessage({
       to: userId,
-      messages: [{ type: 'text', text: `🔄 デフォルト時間 (${globalDefault}) を使用します` }],
+      messages: [createTimeFlex(`🔄 デフォルト時間 (${globalDefault}) を使用します`)],
     });
     return;
   }
@@ -34,12 +43,7 @@ export async function handleSetTime(
   if (!TIME_PATTERN.test(arg)) {
     await client.pushMessage({
       to: userId,
-      messages: [
-        {
-          type: 'text',
-          text: '❌ 形式が正しくありません\n\n例: /set-time 07:00\n/set-time default',
-        },
-      ],
+      messages: [createTimeSelectionFlex()],
     });
     return;
   }
@@ -48,7 +52,7 @@ export async function handleSetTime(
 
   await client.pushMessage({
     to: userId,
-    messages: [{ type: 'text', text: `⏰ 通知時間を ${arg} に変更しました！` }],
+    messages: [createTimeFlex(`⏰ 通知時間を ${arg} に変更しました！`)],
   });
 }
 
@@ -70,12 +74,7 @@ export async function handleSetGlobalTime(
   if (!TIME_PATTERN.test(arg)) {
     await client.pushMessage({
       to: userId,
-      messages: [
-        {
-          type: 'text',
-          text: '❌ 形式が正しくありません\n\n例: /set-global-time 07:00',
-        },
-      ],
+      messages: [createTimeFlex('❌ 形式が正しくありません\n\n例: /set-global-time 07:00')],
     });
     return;
   }
@@ -84,6 +83,6 @@ export async function handleSetGlobalTime(
 
   await client.pushMessage({
     to: userId,
-    messages: [{ type: 'text', text: `⏰ デフォルトの通知時間を ${arg} に変更しました！` }],
+    messages: [createTimeFlex(`⏰ デフォルトの通知時間を ${arg} に変更しました！`)],
   });
 }

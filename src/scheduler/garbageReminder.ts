@@ -2,13 +2,14 @@ import cron from 'node-cron';
 import { lineClient } from '@/line/client';
 import { sendReminders } from '@/services/notificationService';
 import { getGlobalSendTime } from '@/services/settingsService';
+import { createReminderFlex } from '@/line/flexMessages';
 import { logger } from '@/lib/logger';
 import { env } from '@/config/env';
 
-async function sendMulticast(userIds: string[], message: string): Promise<number> {
+async function sendMulticast(userIds: string[], categories: string[]): Promise<number> {
   await lineClient.multicast({
     to: userIds,
-    messages: [{ type: 'text', text: message }],
+    messages: [createReminderFlex(categories)],
   });
   return userIds.length;
 }

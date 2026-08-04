@@ -6,10 +6,17 @@ import type {
   PostbackEvent,
 } from '@line/bot-sdk';
 import { lineClient } from './client';
-import { findOrCreateUser, getArea, setArea, setSubscribed } from '@/services/userService';
+import {
+  findOrCreateUser,
+  getArea,
+  setArea,
+  setSendTime,
+  setSubscribed,
+} from '@/services/userService';
 import { getCommandHandler, getPrefixCommandHandler, isCommand } from './commands/index';
+import { getGlobalSendTime } from '@/services/settingsService';
 import { logger } from '@/lib/logger';
-import { createWelcomeFlex } from './flexMessages';
+import { createWelcomeFlex, createTimeFlex } from './flexMessages';
 
 async function handleFollow(event: FollowEvent): Promise<void> {
   const userId = event.source.userId;
@@ -54,6 +61,28 @@ async function handlePostback(event: PostbackEvent): Promise<void> {
       messages: [{ type: 'text', text: `✅ エリアを「${area.name}」に変更しました！` }],
     });
     logger.info('Area changed via postback', { userId, areaId, areaName: area.name });
+  }
+
+  if (action === 'set_time') {
+    const time = params.get('time');
+    if (!time) return;
+
+    if (time === 'default') {
+      setSendTime(userId, null);
+      const globalDefault = getGlobalSendTime();
+      await lineClient.pushMessage({
+        to: userId,
+        messages: [createTimeFlex(`🔄 デフォルト時間 (${globalDefault}) を使用します`)],
+      });
+      logger.info('Time reset to default via postback', { userId });
+    } else {
+      setSendTime(userId, time);
+      await lineClient.pushMessage({
+        to: userId,
+        messages: [createTimeFlex(`⏰ 通知時間を ${time} に変更しました！`)],
+      });
+      logger.info('Time changed via postback', { userId, time });
+    }
   }
 }
 

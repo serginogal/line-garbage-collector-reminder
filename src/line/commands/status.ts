@@ -1,6 +1,7 @@
 import type { messagingApi } from '@line/bot-sdk';
 import { findByLineId, getArea } from '@/services/userService';
 import { getGlobalSendTime } from '@/services/settingsService';
+import { createStatusFlex } from '../flexMessages';
 
 export async function handleStatus(
   client: messagingApi.MessagingApiClient,
@@ -17,14 +18,10 @@ export async function handleStatus(
 
   const area = getArea(user.area_id);
   const areaName = area?.name ?? '不明';
-  const subscriptionStatus = user.subscribed ? 'オン' : 'オフ';
   const sendTime = user.send_time ?? getGlobalSendTime();
 
-  const message = `⚙️ 現在の設定
-
-📍 エリア: ${areaName}
-🔔 通知: ${subscriptionStatus}
-⏰ 通知時間: ${sendTime}`;
-
-  await client.pushMessage({ to: userId, messages: [{ type: 'text', text: message }] });
+  await client.pushMessage({
+    to: userId,
+    messages: [createStatusFlex({ areaName, subscribed: user.subscribed, sendTime })],
+  });
 }

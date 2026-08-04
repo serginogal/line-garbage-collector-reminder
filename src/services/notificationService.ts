@@ -55,7 +55,7 @@ export interface NotificationResult {
 }
 
 export async function sendReminders(
-  sendFn: (userIds: string[], message: string) => Promise<number>,
+  sendFn: (userIds: string[], categories: string[]) => Promise<number>,
   currentHour: string,
   globalDefault: string,
 ): Promise<NotificationResult[]> {
@@ -76,7 +76,6 @@ export async function sendReminders(
     if (schedules.length === 0) continue;
 
     const categories = [...new Set(schedules.map((s) => s.category))];
-    const message = buildReminderMessage(categories);
 
     const notNotified = areaUsers.filter((u) => !hasNotified(u.id, tomorrow));
     if (notNotified.length === 0) {
@@ -92,7 +91,7 @@ export async function sendReminders(
     const batches = chunk(userIds, MULTICAST_BATCH_SIZE);
     for (const batch of batches) {
       try {
-        const result = await sendFn(batch, message);
+        const result = await sendFn(batch, categories);
         sent += result;
         errors += batch.length - result;
       } catch (_err) {

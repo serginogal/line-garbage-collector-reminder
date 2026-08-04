@@ -2,10 +2,23 @@ import type { messagingApi } from '@line/bot-sdk';
 import { getAllAreas } from '@/services/userService';
 import { getGlobalSendTime } from '@/services/settingsService';
 
-const WELCOME_IMAGE_URL =
-  'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/welcome.png';
-const AREA_SELECT_IMAGE_URL =
-  'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/area-select.png';
+const IMAGES = {
+  welcome:
+    'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/welcome.png',
+  area: 'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/area.png',
+  help: 'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/help.png',
+  reminder:
+    'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/reminder.png',
+  status:
+    'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/status.png',
+  time: 'https://raw.githubusercontent.com/serginogal/images/refs/heads/main/bubbles/v2/time.png',
+} as const;
+
+const HERO_IMAGE_STYLE = {
+  size: 'full' as const,
+  aspectRatio: '20:13' as const,
+  aspectMode: 'cover' as const,
+};
 
 function createAreaButtons(): messagingApi.FlexBox {
   const areas = getAllAreas();
@@ -40,10 +53,8 @@ export function createWelcomeFlex(): messagingApi.FlexMessage {
       size: 'mega',
       hero: {
         type: 'image',
-        url: WELCOME_IMAGE_URL,
-        size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'cover',
+        url: IMAGES.welcome,
+        ...HERO_IMAGE_STYLE,
       },
       body: {
         type: 'box',
@@ -101,10 +112,8 @@ export function createAreaSelectionFlex(): messagingApi.FlexMessage {
       size: 'mega',
       hero: {
         type: 'image',
-        url: AREA_SELECT_IMAGE_URL,
-        size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'cover',
+        url: IMAGES.area,
+        ...HERO_IMAGE_STYLE,
       },
       body: {
         type: 'box',
@@ -121,6 +130,353 @@ export function createAreaSelectionFlex(): messagingApi.FlexMessage {
         paddingAll: '20px',
       },
       footer: createAreaButtons(),
+      styles: {
+        header: { separator: false },
+        footer: { separator: true },
+      },
+    },
+  };
+}
+
+export function createHelpFlex(): messagingApi.FlexMessage {
+  return {
+    type: 'flex',
+    altText: 'コマンド一覧',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      hero: {
+        type: 'image',
+        url: IMAGES.help,
+        ...HERO_IMAGE_STYLE,
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: '📋 コマンド一覧',
+            weight: 'bold',
+            size: 'lg',
+            align: 'center',
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              { type: 'text', text: '/help - この画面を表示', size: 'sm', wrap: true },
+              {
+                type: 'text',
+                text: '/status - 現在の設定を確認',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+              {
+                type: 'text',
+                text: '/subscribe - 通知をオン',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+              {
+                type: 'text',
+                text: '/unsubscribe - 通知をオフ',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+              {
+                type: 'text',
+                text: '/set-time HH:00 - 通知時間を変更',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+              {
+                type: 'text',
+                text: '/set-time default - デフォルトに戻す',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+              {
+                type: 'text',
+                text: '/set-area ID - エリアを変更',
+                size: 'sm',
+                wrap: true,
+                margin: 'md',
+              },
+            ],
+            margin: 'lg',
+          },
+          {
+            type: 'text',
+            text: '例: /set-time 07:00\n例: /set-area 2',
+            size: 'xs',
+            color: '#888888',
+            margin: 'lg',
+            wrap: true,
+          },
+        ],
+        paddingAll: '20px',
+      },
+      styles: {
+        header: { separator: false },
+        footer: { separator: false },
+      },
+    },
+  };
+}
+
+export function createReminderFlex(categories: string[]): messagingApi.FlexMessage {
+  const list = categories.length === 1 ? categories[0] : categories.map((c) => `- ${c}`).join('\n');
+
+  return {
+    type: 'flex',
+    altText: '明日のゴミ収集',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      hero: {
+        type: 'image',
+        url: IMAGES.reminder,
+        ...HERO_IMAGE_STYLE,
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: '🗑️ 明日のごみ収集',
+            weight: 'bold',
+            size: 'lg',
+            align: 'center',
+          },
+          {
+            type: 'text',
+            text: list,
+            size: 'md',
+            align: 'center',
+            margin: 'lg',
+            wrap: true,
+          },
+          {
+            type: 'text',
+            text: '⏰ 朝8時までに出してください',
+            size: 'xs',
+            color: '#888888',
+            align: 'center',
+            margin: 'lg',
+            wrap: true,
+          },
+        ],
+        paddingAll: '20px',
+      },
+      styles: {
+        header: { separator: false },
+        footer: { separator: false },
+      },
+    },
+  };
+}
+
+export function createStatusFlex({
+  areaName,
+  subscribed,
+  sendTime,
+}: {
+  areaName: string;
+  subscribed: boolean;
+  sendTime: string;
+}): messagingApi.FlexMessage {
+  return {
+    type: 'flex',
+    altText: '現在の設定',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      hero: {
+        type: 'image',
+        url: IMAGES.status,
+        ...HERO_IMAGE_STYLE,
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: '⚙️ 現在の設定',
+            weight: 'bold',
+            size: 'lg',
+            align: 'center',
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  { type: 'text', text: '📍 エリア', size: 'sm', color: '#888888', flex: 3 },
+                  {
+                    type: 'text',
+                    text: areaName,
+                    size: 'sm',
+                    weight: 'bold',
+                    flex: 7,
+                    align: 'end',
+                    scaling: true,
+                  },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  { type: 'text', text: '🔔 通知', size: 'sm', color: '#888888', flex: 4 },
+                  {
+                    type: 'text',
+                    text: subscribed ? 'オン' : 'オフ',
+                    size: 'sm',
+                    weight: 'bold',
+                    flex: 6,
+                    align: 'end',
+                  },
+                ],
+                margin: 'md',
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  { type: 'text', text: '⏰ 通知時間', size: 'sm', color: '#888888', flex: 4 },
+                  {
+                    type: 'text',
+                    text: sendTime,
+                    size: 'sm',
+                    weight: 'bold',
+                    flex: 6,
+                    align: 'end',
+                  },
+                ],
+                margin: 'md',
+              },
+            ],
+            margin: 'lg',
+          },
+        ],
+        paddingAll: '20px',
+      },
+      styles: {
+        header: { separator: false },
+        footer: { separator: false },
+      },
+    },
+  };
+}
+
+export function createTimeFlex(message: string): messagingApi.FlexMessage {
+  return {
+    type: 'flex',
+    altText: message,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      hero: {
+        type: 'image',
+        url: IMAGES.time,
+        ...HERO_IMAGE_STYLE,
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: message,
+            size: 'md',
+            align: 'center',
+            wrap: true,
+          },
+        ],
+        paddingAll: '20px',
+      },
+      styles: {
+        header: { separator: false },
+        footer: { separator: false },
+      },
+    },
+  };
+}
+
+const TIME_OPTIONS = ['20:00', '21:00', '22:00'];
+
+function createTimeButtons(): messagingApi.FlexBox {
+  return {
+    type: 'box',
+    layout: 'vertical',
+    spacing: 'md',
+    contents: [
+      ...TIME_OPTIONS.map((time) => ({
+        type: 'button' as const,
+        style: 'primary' as const,
+        color: '#27ACB2',
+        height: 'md' as const,
+        action: {
+          type: 'postback' as const,
+          label: time,
+          data: `action=set_time&time=${time}`,
+          displayText: `${time}に変更`,
+        },
+      })),
+      {
+        type: 'button',
+        style: 'secondary',
+        height: 'md',
+        action: {
+          type: 'postback',
+          label: 'デフォルトに戻す',
+          data: 'action=set_time&time=default',
+          displayText: 'デフォルトに戻す',
+        },
+      },
+    ],
+    paddingAll: '20px',
+  };
+}
+
+export function createTimeSelectionFlex(): messagingApi.FlexMessage {
+  return {
+    type: 'flex',
+    altText: '通知時間を選択してください',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      hero: {
+        type: 'image',
+        url: IMAGES.time,
+        ...HERO_IMAGE_STYLE,
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: '⏰ 通知時間を選択してください',
+            weight: 'bold',
+            size: 'lg',
+            align: 'center',
+          },
+        ],
+        paddingAll: '20px',
+      },
+      footer: createTimeButtons(),
       styles: {
         header: { separator: false },
         footer: { separator: true },
